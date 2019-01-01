@@ -14,6 +14,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 type mysqlStmt struct {
@@ -138,7 +139,7 @@ type converter struct{}
 // database/sql/driver defaultConverter.ConvertValue() except for that
 // deliberate difference.
 func (c converter) ConvertValue(v interface{}) (driver.Value, error) {
-	if driver.IsValue(v) {
+	if IsValue(v) {
 		return v, nil
 	}
 
@@ -147,7 +148,7 @@ func (c converter) ConvertValue(v interface{}) (driver.Value, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !driver.IsValue(sv) {
+		if !IsValue(sv) {
 			return nil, fmt.Errorf("non-Value type %T returned from Value", sv)
 		}
 		return sv, nil
@@ -186,6 +187,17 @@ func (c converter) ConvertValue(v interface{}) (driver.Value, error) {
 		return rv.String(), nil
 	}
 	return nil, fmt.Errorf("unsupported type %T, a %s", v, rv.Kind())
+}
+
+func IsValue(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	switch v.(type) {
+	case []byte, bool, float64, int64, string, time.Time, uint64:
+		return true
+	}
+	return false
 }
 
 var valuerReflectType = reflect.TypeOf((*driver.Valuer)(nil)).Elem()

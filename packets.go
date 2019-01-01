@@ -1074,6 +1074,22 @@ func (stmt *mysqlStmt) writeExecutePacket(args []driver.Value) error {
 				)
 				paramValues = append(paramValues, b...)
 
+			case uint64:
+				paramTypes[i+i] = byte(fieldTypeLongLong)
+				paramTypes[i+i+1] = 0x00
+
+				if cap(paramValues)-len(paramValues)-8 >= 0 {
+					paramValues = paramValues[:len(paramValues)+8]
+					binary.LittleEndian.PutUint64(
+						paramValues[len(paramValues)-8:],
+						uint64(v),
+					)
+				} else {
+					paramValues = append(paramValues,
+						uint64ToBytes(uint64(v))...,
+					)
+				}
+
 			default:
 				return fmt.Errorf("cannot convert type: %T", arg)
 			}
